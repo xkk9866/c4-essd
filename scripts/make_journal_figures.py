@@ -134,32 +134,48 @@ STRESS = {
 }
 
 
+# Academic Figure Skill + scientific-visualization baseline.
+# Elsevier CAS double column = 183 mm; single column = 89 mm.
+MM = 1 / 25.4
+DOUBLE = 183 * MM
+SINGLE = 89 * MM
+
+
 def _style(plt):
+    family = "Arial" if any(
+        os.path.exists(os.path.join(r"C:\Windows\Fonts", n))
+        for n in ("arial.ttf", "Arial.ttf")
+    ) else "DejaVu Sans"
     plt.rcParams.update({
-        "font.family": "DejaVu Sans",
-        "font.size": 9,
-        "axes.titlesize": 10,
-        "axes.labelsize": 9,
-        "xtick.labelsize": 8,
-        "ytick.labelsize": 8,
-        "legend.fontsize": 8,
+        "font.family": family,
+        "font.size": 7.5,
+        "axes.titlesize": 8,
+        "axes.labelsize": 7.5,
+        "xtick.labelsize": 7,
+        "ytick.labelsize": 7,
+        "legend.fontsize": 7,
         "axes.spines.top": False,
         "axes.spines.right": False,
-        "axes.linewidth": 0.8,
+        "axes.linewidth": 0.6,
+        "lines.linewidth": 1.1,
         "pdf.fonttype": 42,
         "ps.fonttype": 42,
         "savefig.dpi": 300,
         "figure.facecolor": "white",
         "axes.facecolor": "white",
+        "axes.titlepad": 3,
+        "xtick.major.pad": 1.5,
+        "ytick.major.pad": 1.5,
     })
 
 
 def _save(fig, name):
     for d in OUT_DIRS:
         os.makedirs(d, exist_ok=True)
-        fig.savefig(os.path.join(d, name + ".pdf"), bbox_inches="tight", pad_inches=0.04)
-        fig.savefig(os.path.join(d, name + ".png"), bbox_inches="tight", pad_inches=0.04, dpi=300)
-    print("wrote", name)
+        fig.savefig(os.path.join(d, name + ".pdf"), bbox_inches="tight", pad_inches=0.02)
+        fig.savefig(os.path.join(d, name + ".png"), bbox_inches="tight", pad_inches=0.02, dpi=300)
+    w, h = fig.get_size_inches()
+    print("wrote", name, f"size={w:.2f} x {h:.2f} in")
 
 
 def _load_summary():
@@ -168,33 +184,42 @@ def _load_summary():
 
 
 def fig_cross(plt):
-    """Two-column: train-by-eval matrix on the three clean protocols."""
-    fig, axes = plt.subplots(1, 3, figsize=(7.15, 2.15))
+    """Double-column, short: proxy-supervision reversal. WESAD design AUCs are
+    all 1.00 (linearly separable TSST) and are omitted, matching Table 2."""
+    fig = plt.figure(figsize=(DOUBLE, 1.42))
+    gs = fig.add_gridspec(1, 3, width_ratios=[2.15, 1.05, 2.15], wspace=0.18)
     rows = ["Train: design", "Train: report", "TRIAD"]
-    cols = ["Design", "Report"]
     keys = ["cond", "report", "triad"]
-    titles = ["MultiPhysio-HRC", "WESAD", "SenseCobot"]
-    disagree = ["36% disagree", "25% disagree", "13% disagree"]
-    for ax, title, note in zip(axes, titles, disagree):
+    specs = [
+        ("MultiPhysio-HRC", "36% disagree", ["Design", "Report"], False),
+        ("WESAD", "25% disagree", ["Report"], True),
+        ("SenseCobot", "13% disagree", ["Design", "Report"], False),
+    ]
+    im = None
+    for i, (title, note, cols, report_only) in enumerate(specs):
+        ax = fig.add_subplot(gs[0, i])
         block = CLEAN[title]
-        M = np.array([block[k] for k in keys], dtype=float)
-        im = ax.imshow(M, vmin=0.50, vmax=1.00, cmap="YlGnBu")
-        for i in range(3):
-            for j in range(2):
-                v = M[i, j]
-                ax.text(j, i, f"{v:.2f}", ha="center", va="center",
-                        color="#111111" if v < 0.86 else "white", fontsize=8, fontweight="medium")
-        ax.set_xticks([0, 1], cols)
-        ax.set_yticks([0, 1, 2], rows if ax is axes[0] else ["", "", ""])
-        ax.set_title(f"{title}  ({note})", pad=4, fontsize=9)
+        if report_only:
+            M = np.array([[block[k][1]] for k in keys], dtype=float)
+        else:
+            M = np.array([block[k] for k in keys], dtype=float)
+        im = ax.imshow(M, vmin=0.50, vmax=1.00, cmap="YlGnBu", aspect="auto")
+        for r in range(M.shape[0]):
+            for c in range(M.shape[1]):
+                v = M[r, c]
+                ax.text(c, r, f"{v:.2f}", ha="center", va="center",
+                        color="#111111" if v < 0.86 else "white", fontsize=7, fontweight="medium")
+        ax.set_xticks(range(len(cols)), cols)
+        ax.set_yticks(range(3), rows if i == 0 else [""] * 3)
+        ax.set_title(f"{title}  ({note})", loc="left", fontsize=7.5)
         ax.tick_params(length=0)
         for spine in ax.spines.values():
             spine.set_visible(False)
-    cax = fig.add_axes([0.93, 0.20, 0.012, 0.58])
+    cax = fig.add_axes([0.935, 0.18, 0.012, 0.62])
     cb = fig.colorbar(im, cax=cax)
     cb.set_label("AUC")
     cb.outline.set_visible(False)
-    fig.subplots_adjust(left=0.15, right=0.91, top=0.86, bottom=0.14, wspace=0.14)
+    fig.subplots_adjust(left=0.12, right=0.925, top=0.86, bottom=0.16)
     _save(fig, "fig_cross")
     plt.close(fig)
 
@@ -206,7 +231,7 @@ def _heatmap(ax, matrix, row_labels, col_labels, vmin=0.50, vmax=1.00):
         for j in range(matrix.shape[1]):
             v = matrix[i, j]
             ax.text(j, i, f"{v:.2f}", ha="center", va="center",
-                    color="#111111" if v < 0.86 else "white", fontsize=8, fontweight="medium")
+                    color="#111111" if v < 0.86 else "white", fontsize=7, fontweight="medium")
     ax.set_xticks(range(len(col_labels)), col_labels)
     ax.set_yticks(range(len(row_labels)), row_labels)
     ax.tick_params(length=0)
@@ -221,7 +246,7 @@ def _heatmap(ax, matrix, row_labels, col_labels, vmin=0.50, vmax=1.00):
 
 def fig_failed(plt):
     """Single-column: failed industrial protocol as horizontal bars."""
-    fig, ax = plt.subplots(figsize=(3.40, 3.15))
+    fig, ax = plt.subplots(figsize=(SINGLE, 2.35))
     methods = ["cond", "report", "twohead", "filter", "triad"]
     short = ["Condition", "Self-report", "Two-head", "Filter", "TRIAD"]
     y = np.arange(len(methods))
@@ -251,7 +276,7 @@ def fig_failed(plt):
         ],
         loc="upper center", bbox_to_anchor=(0.42, 1.18), ncol=3, frameon=False, fontsize=7.0,
     )
-    fig.subplots_adjust(left=0.28, right=0.97, top=0.84, bottom=0.14)
+    fig.subplots_adjust(left=0.30, right=0.98, top=0.82, bottom=0.16)
     _save(fig, "fig_failed")
     plt.close(fig)
 
@@ -290,7 +315,7 @@ def fig_pi(plt, summary):
         ("(d) Industrial tasks on the full protocol", summary["mphrc_all"]["pi"],
          ["rest", "meditation", "manual-task", "cobot-task"]),
     ]
-    fig, axes = plt.subplots(2, 2, figsize=(7.15, 4.35))
+    fig, axes = plt.subplots(2, 2, figsize=(DOUBLE, 3.22))
     for ax, (title, pi, keys) in zip(axes.ravel(), panels):
         keys = [k for k in keys if k in pi]
         y = np.arange(len(keys))
@@ -316,14 +341,14 @@ def fig_pi(plt, summary):
         ],
         loc="upper center", ncol=3, frameon=False, bbox_to_anchor=(0.5, 1.03),
     )
-    fig.subplots_adjust(left=0.15, right=0.98, top=0.90, bottom=0.07, wspace=0.36, hspace=0.32)
+    fig.subplots_adjust(left=0.14, right=0.985, top=0.90, bottom=0.08, wspace=0.34, hspace=0.42)
     _save(fig, "fig_pi")
     plt.close(fig)
 
 
 def fig_ceiling(plt, summary):
     """Two-column: observed report AUC versus the identified ceiling."""
-    fig, ax = plt.subplots(figsize=(7.15, 2.55))
+    fig, ax = plt.subplots(figsize=(DOUBLE, 1.55))
     items = [
         ("MPHRC", summary["mphrc"]),
         ("WESAD", summary["wesad"]),
@@ -359,7 +384,7 @@ def fig_ceiling(plt, summary):
         ],
         loc="upper center", bbox_to_anchor=(0.5, 1.16), ncol=3, frameon=False, fontsize=7.2,
     )
-    fig.subplots_adjust(left=0.14, right=0.98, top=0.82, bottom=0.18)
+    fig.subplots_adjust(left=0.12, right=0.98, top=0.80, bottom=0.20)
     _save(fig, "fig_ceiling")
     plt.close(fig)
 
@@ -368,14 +393,14 @@ def fig_ablation(plt):
     """Two-column: what each piece is for, as an annotated heatmap."""
     names = [r[0] for r in ABLATION]
     M = np.array([[r[1], r[2], r[3]] for r in ABLATION], dtype=float)
-    fig, ax = plt.subplots(figsize=(7.15, 2.05))
-    im = _heatmap(ax, M, names, ["Clean, report", "Failed, report", "Failed, design"],
+    fig, ax = plt.subplots(figsize=(SINGLE, 1.78))
+    im = _heatmap(ax, M, names, ["Clean R", "Failed R", "Failed C"],
                   vmin=0.45, vmax=0.90)
-    cax = fig.add_axes([0.91, 0.16, 0.012, 0.72])
+    cax = fig.add_axes([0.88, 0.16, 0.03, 0.72])
     cb = fig.colorbar(im, cax=cax)
     cb.set_label("AUC")
     cb.outline.set_visible(False)
-    fig.subplots_adjust(left=0.17, right=0.89, top=0.96, bottom=0.14)
+    fig.subplots_adjust(left=0.30, right=0.86, top=0.96, bottom=0.16)
     _save(fig, "fig_ablation")
     plt.close(fig)
 
@@ -391,7 +416,7 @@ def fig_semi(plt):
         ("raykar", "D", C["raykar"], "Raykar"),
         ("triad", "o", C["triad"], "TRIAD"),
     ]
-    fig, axes = plt.subplots(1, 3, figsize=(7.15, 2.40))
+    fig, axes = plt.subplots(1, 3, figsize=(DOUBLE, 1.62))
 
     ax = axes[0]
     for m, mk, col, lab in styles:
@@ -441,8 +466,8 @@ def fig_semi(plt):
 
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc="lower center", ncol=5, frameon=False,
-               bbox_to_anchor=(0.5, -0.02), fontsize=7)
-    fig.subplots_adjust(left=0.07, right=0.99, top=0.88, bottom=0.22, wspace=0.38)
+               bbox_to_anchor=(0.5, -0.04), fontsize=6.5)
+    fig.subplots_adjust(left=0.06, right=0.995, top=0.88, bottom=0.24, wspace=0.32)
     _save(fig, "fig_semi")
     plt.close(fig)
 

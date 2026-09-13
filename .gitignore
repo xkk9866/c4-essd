@@ -14,6 +14,19 @@ paper/
 papers/
 docs/
 dist/
+ccfa-review-reports/
+SUPPLEMENTARY.md
+scripts/compose_*.py
+scripts/label_genimage_figures.py
+scripts/make_video.py
+scripts/build_submission.py
+scripts/count_ai_section.py
+scripts/_ocr_check.py
+scripts/list_exhibits.py
+scripts/dev_*.py
+scripts/pilot_*.py
+results/runs/
+results/*_oldgen.json
 
 # Compiled artefacts
 *.pdf

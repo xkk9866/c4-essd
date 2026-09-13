@@ -125,8 +125,8 @@ Set-Location paper\elsevier\nc;   latexmk -pdf -interaction=nonstopmode main.tex
 Set-Location ..\eswa;             latexmk -pdf -interaction=nonstopmode main.tex
 ```
 
-PDFs (one latest file each): `paper/elsevier/nc/main.pdf` (11 numbered pages) and `paper/elsevier/eswa/main.pdf` (10 numbered pages), plus the CAS graphical-abstract page. Authors: Kang Yao, Yang Zhang, Weiwei Fu, Jinjiang Cui. Code URL in both manuscripts: `https://github.com/xkk9866/c4-essd`.
-Journal tables in `paper/tables/journal/`: datasets, main, failed, heldout; ESWA also uses implications (five tables). WESAD's design-axis 1.00 column is omitted from the main table because every design-aware method saturates on the linearly separable TSST. Figure 1 is a two-column overview; Figure 2 is a single-column portrait pipeline. Experiment figures: cross, failed, pi, ceiling, semi, ablation. CHI figures in `paper/figures/` are not touched. The remaining `Overfull \hbox` at `\maketitle` is reproduced by the untouched CAS class.
+PDFs (one latest file each): `paper/elsevier/nc/main.pdf` (10 numbered pages) and `paper/elsevier/eswa/main.pdf` (11 numbered pages), plus the CAS graphical-abstract and highlights pages. Authors: Kang Yao, Yang Zhang, Weiwei Fu, Jinjiang Cui. Code URL in both manuscripts: `https://github.com/xkk9866/c4-essd`.
+Journal tables in `paper/tables/journal/`: datasets, main, failed, heldout; ESWA also uses implications (five tables). WESAD's design-axis 1.00 column is omitted from the main table and from Figure 3 because every design-aware method saturates on the linearly separable TSST. Figure 1 is a two-column overview; Figure 2 is a single-column portrait framework. Compact experiment figures: cross, failed, pi, ceiling, semi, ablation. CHI figures in `paper/figures/` are not touched. The remaining `Overfull \hbox` at `\maketitle` is reproduced by the untouched CAS class.
 
 ## IEEE Sensors Journal manuscript
 
