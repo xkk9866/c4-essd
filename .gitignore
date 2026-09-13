@@ -1,8 +1,34 @@
-﻿__pycache__/
+# Local caches
+__pycache__/
 *.py[cod]
-.pytest_cache/
 .venv/
 venv/
-data/raw/
+.env
 logs/
+
+# Raw recordings are not redistributed
+data/raw/
+
+# Manuscripts, exemplars, submission packs (not part of the public code repo)
+paper/
+papers/
+docs/
+dist/
+
+# Compiled artefacts
+*.pdf
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.abs
+
+# Editor
 .DS_Store
+.idea/
+.vscode/
